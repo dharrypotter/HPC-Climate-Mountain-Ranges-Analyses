@@ -1,4 +1,3 @@
-import datetime
 import pandas as pd
 from autogluon.timeseries import TimeSeriesDataFrame, TimeSeriesPredictor
 import matplotlib.pyplot as plt
@@ -9,10 +8,8 @@ def load_csv_data(filename: str):
 
     # clean and prepare your csv data here
     # need a datetime column with values in datetime format
-
-    # df["datetime"] = df["datetime"] = df[["snow.year", "month"]].apply(
-    #     lambda x: datetime.datetime(x[0] // 100, int(x[1]), 1), axis=1
-    # )
+    df = df[["date", "temp_max"]]
+    df["date"] = pd.to_datetime(df["date"])
 
     # need this column for TimeSeriesPredictor
     df["item_id"] = 0
@@ -22,8 +19,10 @@ def load_csv_data(filename: str):
 
     # df.dropna(subset=[targets[0]], inplace=True)
     # df = df.interpolate(method="linear")
-    # df = df.bfill()
-    # df = df.ffill()
+    df = df.bfill()
+    df = df.ffill()
+    df = df.groupby(df["date"].dt.to_period("D")).first()
+    print(df.head())
 
     return df
 
@@ -40,13 +39,15 @@ def time_series_analysis(target: str, df: pd.DataFrame, path=None):
     :type path: str, optional
 
     """
-    # use df.to_regular_index() to fill in gaps if necessary
+    # use TimeSeriesDataFrame.to_regular_index() to fill in gaps if necessary
     # see pandas documentation for frequency options
     # https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases
     # then use TimeSeriesDataFrame.fill_missing_values() to fill in the resulting NaNs
     train_data = TimeSeriesDataFrame.from_data_frame(
-        df, id_column="item_id", timestamp_column="datetime"
+        df, id_column="item_id", timestamp_column="date"
     )
+    # train_data = train_data.to_regular_index(freq="D")
+    # train_data = train_data.fill_missing_values()
 
     if path is not None:
         try:
@@ -90,7 +91,7 @@ def time_series_analysis(target: str, df: pd.DataFrame, path=None):
     y_past = train_data.loc[item_id][target]
     y_pred = predictions.loc[item_id]
 
-    plt.plot(y_past[-200:], label="Past time series values")
+    plt.plot(y_past, label="Past time series values")
     plt.plot(y_pred["mean"], label="Mean forecast")
 
     plt.fill_between(
@@ -108,4 +109,8 @@ def time_series_analysis(target: str, df: pd.DataFrame, path=None):
     plt.show()
 
 
-time_series_analysis("temp", load_csv_data("my_data.csv"), path="model_name")
+time_series_analysis(
+    "temp_max",
+    load_csv_data("White_Mountains/1939_to_2022_b16_synoptic_data.csv"),
+    path="white-mountains-synoptic-1939-2022",
+)
