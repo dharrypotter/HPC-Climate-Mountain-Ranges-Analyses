@@ -1,3 +1,4 @@
+import datetime
 import pandas as pd
 from autogluon.timeseries import TimeSeriesDataFrame, TimeSeriesPredictor
 import matplotlib.pyplot as plt
@@ -8,8 +9,11 @@ def load_csv_data(filename: str):
 
     # clean and prepare your csv data here
     # need a datetime column with values in datetime format
-    df = df[["date", "temp_max"]]
-    df["date"] = pd.to_datetime(df["date"])
+    df = df[["snow.year", "month", "mean.temp.C.cb"]]
+
+    df["datetime"] = df[["snow.year", "month"]].apply(
+        lambda x: datetime.datetime(x[0] // 100, int(x[1]), 1), axis=1
+    )
 
     # need this column for TimeSeriesPredictor
     df["item_id"] = 0
@@ -21,8 +25,6 @@ def load_csv_data(filename: str):
     # df = df.interpolate(method="linear")
     df = df.bfill()
     df = df.ffill()
-    df = df.groupby(df["date"].dt.to_period("D")).first()
-    print(df.head())
 
     return df
 
@@ -44,10 +46,10 @@ def time_series_analysis(target: str, df: pd.DataFrame, path=None):
     # https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases
     # then use TimeSeriesDataFrame.fill_missing_values() to fill in the resulting NaNs
     train_data = TimeSeriesDataFrame.from_data_frame(
-        df, id_column="item_id", timestamp_column="date"
+        df, id_column="item_id", timestamp_column="datetime"
     )
-    # train_data = train_data.to_regular_index(freq="D")
-    # train_data = train_data.fill_missing_values()
+    train_data = train_data.to_regular_index(freq="MS")
+    train_data = train_data.fill_missing_values()
 
     if path is not None:
         try:
@@ -110,7 +112,7 @@ def time_series_analysis(target: str, df: pd.DataFrame, path=None):
 
 
 time_series_analysis(
-    "temp_max",
-    load_csv_data("White_Mountains/1939_to_2022_b16_synoptic_data.csv"),
-    path="white-mountains-synoptic-1939-2022",
+    "mean.temp.C.cb",
+    load_csv_data("RMBL-weather-months-1974-2022.csv"),
+    path="autogluon-rmbl_weather_months",
 )

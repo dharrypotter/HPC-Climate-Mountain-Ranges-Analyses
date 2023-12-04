@@ -64,7 +64,8 @@ def tabular(target: str, df: pd.DataFrame, path=None):
 # create plots of the data
 def plots(df):
     # correlations
-    sns.heatmap(df.corr(), cmap="coolwarm")
+    sns.heatmap(df.corr(), cmap="coolwarm", annot=True)
+    plt.tight_layout()
 
     # scatter plots
     sns.pairplot(df)
