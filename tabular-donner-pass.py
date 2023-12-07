@@ -15,7 +15,10 @@ def load_csv_data(filename: str):
     df = df.replace("--", np.nan)
     df = df.replace("T", np.nan)
     df = df.replace(".", np.nan)
+    df = df.replace("#VALUE!", np.nan)
+
     df["Air Temp Max (C)"] = df["Air Temp Max (C)"].astype(float)
+    df["Air Temp Mean (C)"] = df["Air Temp Mean (C)"].astype(float)
     df["24-hour Total Precip (mm)"] = df["24-hour Total Precip (mm)"].astype(float)
     df["% of Precip as Snow"] = df["% of Precip as Snow"].astype(float)
     df["% of Precip as Rain"] = df["% of Precip as Rain"].astype(float)
@@ -83,6 +86,6 @@ def plots(df):
     plt.show()
 
 
-data = load_csv_data("donner_pass_data.csv")
-tabular("Air Temp Max (C)", data, path="donner-pass-tabular")
+data = load_csv_data("donner_pass_updated.csv")
+# tabular("Air Temp Max (C)", data, path="donner-pass-tabular")
 plots(data)
